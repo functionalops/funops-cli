@@ -1,0 +1,156 @@
+== funops-cli
+
+A library that provides helpers, DRYs imports, and enhances the following
+battled tested libraries already on Hackage for our system scripting work in a
+typesafe environment for an audience that is not typically acquainted with
+Haskell programming or managing the imports of combinators from packages like
+`Control.Applicative`, `Control.Monad`, `Control.Lens`, `Data.Maybe`, and
+others.
+
+Below are the libraries this library will be wrapping around to provide
+simpler types and less flexible but more consistent functions for the
+Haskell newcomer:
+
+* `aeson`: http://hackage.haskell.org/package/aeson - chosen due to being
+  defacto JSON parsing/rendering package in Haskell ecosystem with good
+  (enough) performance characteristics for CLI scripting.
+* `wreq`: http://hackage.haskell.org/package/wreq - chosen to help simplify
+  HTTP request/response processing with a wide variety of HTTP methods, and
+  capabilities (authentication strategies, header inspection, and content
+  negotiation for REST client purposes).
+* `doctest`: http://hackage.haskell.org/package/doctest - chosen to keep
+  documented examples of CLI scripts and their utilities consistent and
+  verifiable.
+* `optparse-applicative`: http://hackage.haskell.org/package/optparse-applicative -
+  chosen to wrap a simpler (for the non-Haskeller) consuming API enforcing the
+  definition of well defined options and arguments to a script.
+* `path`: See http://hackage.haskell.org/package/path - chosen to provide more
+  typesafe file and directory creation, modification, and deletion
+  capabilities to scripts.
+
+=== Purpose
+
+Provide an API consumable to those seeking to write, test, and deploy command-
+line scripts that do not require the author to have a good command of the
+Haskell programming language (beyond basics) or the organization of
+combinators found in commonly used pacakges and where they should be imported
+from and which one should be qualified vs directly imported to avoid
+collisions or conflicts.
+
+=== Objectives
+
+* Do not compromise on typesafety if there are obvious benefits for the
+  addition of typesafety for an exposed API that eliminates common root causes
+  of bugs.
+* Enable authors of scripts using this library and package to verify their
+  documented examples and properties of their functions or reusable modules
+  with minimal effort.
+
+=== Assumptions
+
+We work in the Nix environment. Our development environment artifacts and
+definition assumes you have Nix package manager setup with GHC 7.10.x support
+although you can inject the GHC compiler you wish to use for the dev
+environment (see below for details). Ideally you should be using Nix 1.9 or
+above to utilize the `nix-shell` shebang examples without any issues.
+
+We built this library for engineers working on Nix/NixOS/NixOps/Disnix
+configuration and are attempting to optimizing the design of the API for those
+familiar with Nix expression language.
+
+=== Scope
+
+The APIs exposed from this library will focus on the following areas:
+
+* *system automation:* e.g. creating, moving, renaming, building files and
+  directories in various ways using the optimally typesafe APIs without
+  sacrificing simplicity for the non-Haskeller (our audience).
+* *HTTP API automation:* e.g. interacting with Jira, PagerDuty, DataDog,
+  Sentry, Slack, etc. APIs for automating rote work tasks or integrating
+  across systems to reduce human error and remove manual tasks.
+* *JSON parsing:* e.g. parsing response bodies from HTTP requests in JSON.
+* *Providing sensible defaults:* reading and defaulting missing environment
+  variables, optional named CLI options/arguments, URL construction defaults.
+* *Generating manpages from CLI usage output:* because this should be done
+  for building solid tools. :)
+* *DRYer imports for the Haskell n00b:* yup!
+* *Examples:* lots of examples will be provided.
+* *Simpler script testing from documentation:* helpers for things like doctest
+  so non-Haskellers can get used to a better way of writing and testing CLI
+  scripts without needing to know a great deal of Haskell.
+
+=== License
+
+This project is licensed under the BSD 3-clause license. See link:LICENSE[].
+
+=== Getting Started
+
+To launch the dev env with all dependencies loaded:
+
+[source,shell]
+----
+$ nix-shell # at root of git repository clone
+----
+
+This will load the Nix shell with GHC 7.10.1 environment setup by default.
+
+To change the version of GHC you can do the following:
+
+[source,shell]
+----
+$ nix-shell --argstr hscompiler ghc784
+----
+
+Now you can either open `ghci` in that development shell or run `doctest` on
+modules in this repository under `src`.
+
+=== Script Examples
+
+The kinds of scripts we will be writing with this will typically be parsing
+command line options using sensible defaults, using HTTP (over TLS) APIs,
+parsing JSON, and possibilty making changes on local filesystems.
+
+So let's dive in with a simple example:
+
+[source,haskell]
+----
+#!/usr/bin/env nix-shell
+#!nix-shell -p "haskell.packages.ghcWithPackages (p: [ p.funops-cli ])"
+#!nix-shell -i runghc
+
+{-# LANGUAGE OverloadedStrings #-}
+
+import Funops.CLI
+
+main = ...TODO...
+----
+
+=== Related Works
+
+See the `turtle` and `shelly` shell APIs for Haskell.
+
+* *Why bother writing something else then?*
+  _Great question. The reason was that despite the less expert command of
+  Haskell that a consumer of the Turtle/Shelly API requires to build system
+  automation, there are major areas where typesafety were compromised (see
+  `path` link:http://chrisdone.com/posts/path-package[package motivation post]
+  to find out how the `filepath` package which `turtle` is based on doesn't
+  detect a good number of common path-based pitfalls or root of many common
+  bugs in scripts as one area). The aims of this project are to stay as true
+  to offering the optimal typesafety without compromising simplicity of API
+  for the non-Haskeller. We think wrapping the above mentioned well-tested,
+  mostly mature Haskell packages above will provide a better fit for our team
+  developing infrastructures and automation in Nix/NixOS.
+  Another area in `turtle` and `shelly` that directly conflicts with our
+  philosophy is that we don't mind the scripts our infrastructure engineers
+  write not looking like shell scripts as we hope it does not take very long
+  for engineers new to the library to ramp up on the API. In fact, we think
+  the resulting code not looking like shell scripts is a good thing as it
+  will help retrain the engineer's thought process used to writing shell
+  scripts to think about examples of the results of their code as opposed to
+  how those results are accomplished much more than mimicking the look of
+  shell scripts.
+  These are philosophical differences in goals and objectives, but you might
+  find link:http://hackage.haskell.org/package/turtle[turtle] and/or
+  link:http://hackage.haskell.org/package/shelly[shelly] to be a
+  better fit for your needs than `funops-cli`. HTH._
